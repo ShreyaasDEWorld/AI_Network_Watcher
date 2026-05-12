@@ -1,0 +1,134 @@
+SYSTEM ARCHITECTURE
+Wi-Fi Network
+      ↓
+Python Scanner
+      ↓
+Device Discovery
+      ↓
+Database / Logs
+      ↓
+AI Analyzer
+      ↓
+Dashboard + Alerts
+
+
+Technologies
+Tool	Purpose
+Python->	Core app
+scapy->	Packet/network scanning
+socket->	Host lookup
+subprocess->	Run ping/arp
+nmap->	Advanced scanning
+
+
+Dashboard Features
+
+✔ Connected devices
+✔ Device history
+✔ Live alerts
+✔ Unknown devices
+✔ Traffic graphs
+
+Intruder Detection
+
+1.Detect unauthorized devices.
+
+if MAC not in trusted_devices:
+    send_alert()
+
+Alerts
+Telegram
+Email
+Desktop notification
+Discord webhook
+
+2.AI Network Analyzer
+Classify devices automatically.
+
+3. AI Features
+Input	        AI Prediction
+TTL + Vendor-->	Device type
+Traffic pattern-->	User behavior
+Usage time--> 	Suspicious activity
+
+Example
+“Possible Smart TV detected”
+“Unknown Android device”
+“Suspicious late-night activity”
+
+
+Device Analytics
+
+Track:
+
+online time
+frequency
+bandwidth
+usage pattern
+
+
+AI Anomaly Detection
+Use:
+Scikit-learn
+
+Algorithms:
+
+Isolation Forest
+Clustering
+Behavioral analysis
+
+Geo + Vendor Intelligence
+
+Use:
+
+MAC vendor lookup
+device fingerprinting
+
+
+
+AI ROADMAP
+Phase 1
+
+Basic scanner
+
+Phase 2
+
+Dashboard
+
+Phase 3
+
+Intruder alerts
+
+Phase 4
+
+AI classification
+
+Phase 5
+
+Behavior prediction
+
+
+
+DEPLOYMENT
+Local
+Streamlit
+FastAPI
+Enterprise
+Docker
+Kubernetes
+Grafana dashboards
+
+
+
+FULL FLOW
+Create ARP request
+        ↓
+Broadcast to network
+        ↓
+Devices respond
+        ↓
+Collect IP + MAC
+        ↓
+Store in DataFrame
+        ↓
+Print results
