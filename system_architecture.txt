@@ -154,3 +154,26 @@ Get Vendor
 Analyze TTL
       ↓
 Predict Device Type
+
+
+PHASE 5 GOAL
+
+Build a live dashboard showing:
+
+✅ Connected devices
+✅ Device types
+✅ Vendors
+✅ Intruder alerts
+✅ Real-time scanning
+✅ Auto-refresh monitoring
+
+ARCHITECTURE
+Wi-Fi Network
+      ↓
+ARP Scanner
+      ↓
+AI Classification
+      ↓
+Streamlit Dashboard
+      ↓
+Live Monitoring
