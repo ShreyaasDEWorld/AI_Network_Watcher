@@ -132,3 +132,25 @@ Collect IP + MAC
 Store in DataFrame
         ↓
 Print results
+
+
+HOW WILL WE DO THIS?
+
+Initially using:
+
+Feature	Purpose
+TTL	OS detection
+MAC Vendor	Manufacturer
+IP patterns	Device role
+
+
+PHASE 4 ARCHITECTURE
+Scan Device
+      ↓
+Get MAC
+      ↓
+Get Vendor
+      ↓
+Analyze TTL
+      ↓
+Predict Device Type
