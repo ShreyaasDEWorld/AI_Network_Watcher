@@ -2,8 +2,43 @@ import streamlit as st
 import pandas as pd
 import socket
 import json
+import requests
 from scapy.all import ARP, Ether, srp
 from mac_vendor_lookup import MacLookup
+from dotenv import load_dotenv
+import os
+
+
+# -----------------------------
+# Load Environment Variables
+# -----------------------------
+load_dotenv()
+
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+CHAT_ID = os.getenv("CHAT_ID")
+
+
+# -----------------------------
+# Telegram Alert Function
+# -----------------------------
+def send_telegram_alert(message):
+
+    # Skip if credentials missing
+    if not BOT_TOKEN or not CHAT_ID:
+        return
+
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+
+    payload = {
+        "chat_id": CHAT_ID,
+        "text": message
+    }
+
+    try:
+        requests.post(url, data=payload)
+
+    except Exception as e:
+        st.error(f"Telegram Error: {e}")
 
 
 # -----------------------------
@@ -19,7 +54,7 @@ def scan_network():
 
     packet = ether / arp
 
-    #result = srp(packet, timeout=3, verbose=0)[0]
+    # Increased timeout for better detection
     result = srp(packet, timeout=8, verbose=0)[0]
 
     devices = []
@@ -29,19 +64,25 @@ def scan_network():
         ip = received.psrc
         mac = received.hwsrc.lower()
 
+        # -----------------------------
         # Hostname lookup
+        # -----------------------------
         try:
             hostname = socket.gethostbyaddr(ip)[0]
         except:
             hostname = "Unknown"
 
+        # -----------------------------
         # Vendor lookup
+        # -----------------------------
         try:
             vendor = MacLookup().lookup(mac)
         except:
             vendor = "Unknown Vendor"
 
-        # AI classification
+        # -----------------------------
+        # AI Device Classification
+        # -----------------------------
         device_type = classify_device(hostname, vendor)
 
         devices.append({
@@ -52,7 +93,14 @@ def scan_network():
             "Device Type": device_type
         })
 
-    # Always return consistent columns
+    # -----------------------------
+    # Debugging Output
+    # -----------------------------
+    st.write("Devices Raw Output:", devices)
+
+    # -----------------------------
+    # Return DataFrame
+    # -----------------------------
     return pd.DataFrame(
         devices,
         columns=[
@@ -124,7 +172,7 @@ st.set_page_config(
 
 st.title("📡 AI Network Watcher")
 
-st.markdown("### Real-Time Wi-Fi Monitoring Dashboard")
+st.markdown("### 🚀 Real-Time Wi-Fi Monitoring Dashboard")
 
 
 # -----------------------------
@@ -134,35 +182,55 @@ if st.button("🔄 Scan Network"):
 
     df = scan_network()
 
-    # Debugging
-    st.write(df)
-
     st.success(f"✅ Total Devices Found: {len(df)}")
 
-    # Empty DataFrame check
+    # -----------------------------
+    # Empty DataFrame Check
+    # -----------------------------
     if df.empty:
 
         st.warning("⚠️ No devices found on network")
 
     else:
 
-        # Intruder detection
+        # -----------------------------
+        # Intruder Detection
+        # -----------------------------
         intruders = df[
             ~df["MAC Address"].isin(trusted_devices)
         ]
 
-        # Show intruder alerts
+        # -----------------------------
+        # Show Intruder Alerts
+        # -----------------------------
         if len(intruders) > 0:
 
             st.error("🚨 Intruder Devices Detected!")
 
             st.dataframe(intruders)
 
+            # -----------------------------
+            # Send Telegram Alerts
+            # -----------------------------
+            for _, row in intruders.iterrows():
+
+                message = (
+                    f"🚨 Intruder Detected!\n"
+                    f"IP Address: {row['IP Address']}\n"
+                    f"MAC Address: {row['MAC Address']}\n"
+                    f"Vendor: {row['Vendor']}\n"
+                    f"Device Type: {row['Device Type']}"
+                )
+
+                send_telegram_alert(message)
+
         else:
 
             st.success("✅ No intruders detected")
 
-        # Full device table
+        # -----------------------------
+        # Full Device Table
+        # -----------------------------
         st.subheader("📋 Connected Devices")
 
         st.dataframe(df)
