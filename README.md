@@ -7,8 +7,8 @@ AI-powered Wi-Fi monitoring and network discovery system built using Python, Sca
 - Network scanning
 - Connected device discovery
 - Live dashboard
-- Intruder detection (coming soon)
-- AI device classification (coming soon)
+- Intruder detection 
+- AI device classification 
 
 ## Technologies
 
