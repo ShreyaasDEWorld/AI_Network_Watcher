@@ -1,2 +1,3 @@
 Intruder Detected | IP: 192.168.0.100 | MAC: 76:46:e0:70:80:7e
 Intruder Detected | IP: 192.168.0.100 | MAC: 76:46:e0:70:80:7e
+Intruder Detected | IP: 192.168.0.101 | MAC: a0:91:a2:3a:fc:1d
