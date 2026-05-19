@@ -1,7 +1,8 @@
 from scapy.all import ARP, Ether, srp
 import pandas as pd
 
-target_ip = "192.168.0.1/24"
+#target_ip = "192.168.0.1/24"
+target_ip = "192.168.1.1/24"
 
 arp = ARP(pdst=target_ip)
 
@@ -9,7 +10,8 @@ ether = Ether(dst="ff:ff:ff:ff:ff:ff")
 
 packet = ether / arp
 
-result = srp(packet, timeout=3, verbose=0)[0]
+#result = srp(packet, timeout=3, verbose=0)[0]
+result = srp(packet, timeout=10, verbose=0)[0]
 
 devices = []
 

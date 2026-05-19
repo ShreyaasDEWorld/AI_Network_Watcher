@@ -5,7 +5,8 @@ from mac_vendor_lookup import MacLookup
 
 def scan_network():
 
-    target_ip = "192.168.0.1/24"
+    #target_ip = "192.168.0.1/24"
+    target_ip = "192.168.1.1/24"
 
     arp = ARP(pdst=target_ip)
 
@@ -13,7 +14,8 @@ def scan_network():
 
     packet = ether / arp
 
-    result = srp(packet, timeout=3, verbose=0)[0]
+    #result = srp(packet, timeout=3, verbose=0)[0]
+    result = srp(packet, timeout=10, verbose=0)[0]
 
     devices = []
 

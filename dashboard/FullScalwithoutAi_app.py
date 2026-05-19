@@ -1,4 +1,3 @@
-
 # =====================================================
 # IMPORTS
 # =====================================================
@@ -9,22 +8,21 @@ import socket
 import json
 import requests
 import os
-import sys
-
-from pathlib import Path
 from datetime import datetime
-
-# Add project root to Python path
-ROOT_DIR = Path(__file__).resolve().parent.parent
-sys.path.append(str(ROOT_DIR))
 
 from scapy.all import ARP, Ether, srp
 from mac_vendor_lookup import MacLookup
 from dotenv import load_dotenv
 from streamlit_autorefresh import st_autorefresh
 
+import sys
+from pathlib import Path
+
+ROOT_DIR = Path(__file__).resolve().parent.parent
+
+sys.path.append(str(ROOT_DIR))
+
 from database.db import engine
-from ai.detect_anomaly import detect_anomaly
 
 
 # =====================================================
@@ -39,12 +37,12 @@ CHAT_ID = os.getenv("CHAT_ID")
 
 # =====================================================
 # TELEGRAM ALERT FUNCTION
-# Sends security alerts to Telegram
+# Sends alerts to Telegram bot
 # =====================================================
-
 
 def send_telegram_alert(message):
 
+    # Skip if credentials missing
     if not BOT_TOKEN or not CHAT_ID:
         return
 
@@ -64,8 +62,8 @@ def send_telegram_alert(message):
 
 # =====================================================
 # AI DEVICE CLASSIFICATION
+# Predict device type using hostname/vendor
 # =====================================================
-
 
 def classify_device(hostname, vendor):
 
@@ -108,13 +106,12 @@ def classify_device(hostname, vendor):
 
 # =====================================================
 # NETWORK SCANNER
+# Uses ARP scanning to detect active devices
 # =====================================================
-
 
 def scan_network():
 
-    #target_ip = "192.168.0.1/24"
-    target_ip = "192.168.1.1/24"
+    target_ip = "192.168.0.1/24"
 
     arp = ARP(pdst=target_ip)
 
@@ -122,6 +119,7 @@ def scan_network():
 
     packet = ether / arp
 
+    # Scan network
     result = srp(packet, timeout=8, verbose=0)[0]
 
     devices = []
@@ -131,25 +129,19 @@ def scan_network():
         ip = received.psrc
         mac = received.hwsrc.lower()
 
-        # -----------------------------
-        # Hostname Lookup
-        # -----------------------------
+        # Hostname lookup
         try:
             hostname = socket.gethostbyaddr(ip)[0]
         except:
             hostname = "Unknown"
 
-        # -----------------------------
-        # Vendor Lookup
-        # -----------------------------
+        # Vendor lookup
         try:
             vendor = MacLookup().lookup(mac)
         except:
             vendor = "Unknown Vendor"
 
-        # -----------------------------
-        # AI Device Classification
-        # -----------------------------
+        # AI classification
         device_type = classify_device(hostname, vendor)
 
         devices.append({
@@ -160,14 +152,10 @@ def scan_network():
             "Device Type": device_type
         })
 
-    # -----------------------------
-    # Debugging Output
-    # -----------------------------
+    # Debugging output
     st.write("Devices Raw Output:", devices)
 
-    # -----------------------------
-    # Return DataFrame
-    # -----------------------------
+    # Convert into DataFrame
     return pd.DataFrame(
         devices,
         columns=[
@@ -182,8 +170,8 @@ def scan_network():
 
 # =====================================================
 # SAVE DATA INTO POSTGRESQL
+# Stores device history for future AI analysis
 # =====================================================
-
 
 def save_to_database(df, trusted_devices):
 
@@ -199,22 +187,14 @@ def save_to_database(df, trusted_devices):
         )
 
         records.append({
-
             "ip_address": row["IP Address"],
-
             "mac_address": row["MAC Address"],
-
             "hostname": row["Hostname"],
-
             "vendor": row["Vendor"],
-
             "device_type": row["Device Type"],
-
             "is_intruder": is_intruder,
-
-            # Scan timestamp
+            # Actual scan timestamp
             "scan_time": datetime.now()
-
         })
 
     save_df = pd.DataFrame(records)
@@ -246,23 +226,24 @@ st.set_page_config(
 
 st.title("📡 AI Network Watcher")
 
-st.markdown(
-    "### 🚀 Real-Time AI-Powered Wi-Fi Monitoring Dashboard"
-)
+st.markdown("### 🚀 Real-Time Wi-Fi Monitoring Dashboard")
 
 
 # =====================================================
-# AUTO REFRESH
+# AUTO REFRESH CONFIGURATION
+# Auto scans every 15 seconds
+# Auto scans every 2 min
 # =====================================================
 
 auto_refresh = st.checkbox(
-    "Enable Auto Refresh (2 min)"
+    "Enable Auto Refresh (30 sec)"
 )
 
 if auto_refresh:
 
     st_autorefresh(
-        interval=120000,
+        interval=30000,
+        #interval=120000,
         key="network_monitor"
     )
 
@@ -275,110 +256,56 @@ scan_now = st.button("🔄 Scan Network")
 
 
 # =====================================================
-# MAIN EXECUTION
+# MAIN SCAN EXECUTION
 # =====================================================
 
 if scan_now or auto_refresh:
 
-    # -----------------------------
-    # Scan Network
-    # -----------------------------
+    # Scan network
     df = scan_network()
 
     st.success(f"✅ Total Devices Found: {len(df)}")
 
-    # -----------------------------
-    # Save Into PostgreSQL
-    # -----------------------------
+    # Save into PostgreSQL
     save_to_database(df, trusted_devices)
 
-    # -----------------------------
-    # Empty Check
-    # -----------------------------
+    # Empty check
     if df.empty:
 
         st.warning("⚠️ No devices found on network")
 
     else:
 
-        # -----------------------------
-        # Detect Intruders
-        # -----------------------------
+        # Detect intruders
         intruders = df[
             ~df["MAC Address"].isin(trusted_devices)
         ]
 
-        # -----------------------------
-        # Intruder Detection
-        # -----------------------------
+        # Intruder alerts
         if len(intruders) > 0:
 
             st.error("🚨 Intruder Devices Detected!")
 
             st.dataframe(intruders)
 
-            # -----------------------------
-            # Process Each Intruder
-            # -----------------------------
+            # Send Telegram alerts
             for _, row in intruders.iterrows():
 
-                # =====================================================
-                # AI ANOMALY DETECTION
-                # =====================================================
-
-                ai_result = detect_anomaly(
-
-                    scan_hour=datetime.now().hour,
-
-                    vendor=row["Vendor"],
-
-                    device_type=row["Device Type"],
-
-                    is_intruder=True
-                )
-
-                # -----------------------------
-                # Show AI Results
-                # -----------------------------
-                st.warning(
-                    f"🧠 AI Anomaly Score: {ai_result['score']:.4f}"
-                )
-
-                # -----------------------------
-                # AI Suspicious Detection
-                # -----------------------------
-                if ai_result["anomaly"]:
-
-                    st.error(
-                        "🚨 AI DETECTED SUSPICIOUS DEVICE"
-                    )
-
-                # -----------------------------
-                # Telegram Alert Message
-                # -----------------------------
                 message = (
-                    f"🚨 AI Security Alert!\n\n"
+                    f"🚨 Intruder Detected!\n"
                     f"IP Address: {row['IP Address']}\n"
                     f"MAC Address: {row['MAC Address']}\n"
                     f"Vendor: {row['Vendor']}\n"
-                    f"Device Type: {row['Device Type']}\n"
-                    f"AI Anomaly Score: {ai_result['score']:.4f}\n"
-                    f"Suspicious: {ai_result['anomaly']}"
+                    f"Device Type: {row['Device Type']}"
                 )
 
-                # -----------------------------
-                # Send Telegram Alert
-                # -----------------------------
                 send_telegram_alert(message)
 
         else:
 
             st.success("✅ No intruders detected")
 
-        # -----------------------------
-        # Show Connected Devices
-        # -----------------------------
+        # Show device table
         st.subheader("📋 Connected Devices")
 
         st.dataframe(df)
-
