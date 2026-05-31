@@ -1,37 +1,58 @@
-from manuf import manuf
+import psycopg2
 
-parser = manuf.MacParser()
+# PostgreSQL Connection
+conn = psycopg2.connect(
+    host="localhost",
+    port=5432,
+    database="ai_network_watcher",
+    user="mangesh",
+    password="Admin"
+)
 
-mac_address = "BC:EE:7B:00:00:00"
+cur = conn.cursor()
 
-vendor = parser.get_manuf(mac_address)
-company = parser.get_comment(mac_address)
+#file_path = "C:\Users\admin\Downloads\manuf\manuf"
+file_path = r"C:\Users\admin\Downloads\manuf\manuf"
 
-# Device type mapping
-device_map = {
-    "Apple": "Mobile / Laptop",
-    "Samsung": "Mobile",
-    "Xiaomi": "Mobile",
-    "Realtek": "Network Device",
-    "Cisco": "Router / Switch",
-    "ASUSTek": "Router / Laptop",
-    "TP-Link": "Router",
-    "Huawei": "Mobile / Router",
-    "Dell": "Laptop/Desktop",
-    "HP": "Laptop/Desktop",
-    "Lenovo": "Laptop/Desktop",
-    "Intel": "Computer",
-    "Amazon": "IoT Device",
-}
+with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
 
-device_type = "Unknown"
+    for line in f:
 
-for key, value in device_map.items():
-    if company and key.lower() in company.lower():
-        device_type = value
-        break
+        # Skip comments
+        if line.startswith("#") or not line.strip():
+            continue
 
-print(f"MAC Address : {mac_address}")
-print(f"Vendor      : {vendor}")
-print(f"Company     : {company}")
-print(f"Device Type : {device_type}")
+        parts = line.strip().split()
+
+        if len(parts) < 3:
+            continue
+
+        mac_prefix = parts[0]
+        vendor_short = parts[1]
+
+        # Remaining columns become full vendor name
+        vendor_full = " ".join(parts[2:])
+
+        cur.execute(
+            """
+            INSERT INTO mac_vendors
+            (
+                mac_prefix,
+                vendor_short_name,
+                vendor_full_name
+            )
+            VALUES (%s,%s,%s)
+            """,
+            (
+                mac_prefix,
+                vendor_short,
+                vendor_full
+            )
+        )
+
+conn.commit()
+
+cur.close()
+conn.close()
+
+print("✅ MAC Vendor Data Loaded Successfully")
