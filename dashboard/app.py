@@ -13,6 +13,7 @@ import sys
 
 from pathlib import Path
 from datetime import datetime
+#from utils.network_utils import get_network_range
 
 # Add project root to Python path
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -113,8 +114,9 @@ def classify_device(hostname, vendor):
 
 def scan_network():
 
-    #target_ip = "192.168.0.1/24"
-    target_ip = "192.168.1.1/24"
+    target_ip = "192.168.0.1/24"
+    #target_ip = "192.168.1.1/24"
+    #target_ip = get_network_range()
 
     arp = ARP(pdst=target_ip)
 
